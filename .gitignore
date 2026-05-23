@@ -1,0 +1,20 @@
+# Bootstrap preview output — generated locally, never committed
+.claude/.preview/
+
+# Local settings overrides (developer-specific permissions, env vars)
+.claude/settings.local.json
+
+# Scheduled tasks lock (runtime artifact)
+.claude/scheduled_tasks.lock
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node (in case someone uses it for local helper scripts)
+node_modules/
+npm-debug.log*
+yarn-error.log*
