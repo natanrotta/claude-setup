@@ -16,6 +16,7 @@ Two execution modes — pick based on whether the user explicitly asked for a wo
 - **Stack summary:** {{STACK_SUMMARY}}
 - **Base branch:** `{{BASE_BRANCH}}`
 - **Specialists configured:** {{SPECIALISTS_LIST}}
+- **Conversation language:** `{{CONVERSATION_LANGUAGE}}` — every reply, every prompt, every PR description, every commit message in this language. No mixing. If the user clearly switches mid-session, ask once before switching.
 
 For the full stack table, baseline rules, and module layout, see `.claude/patterns/BASELINE.md`.
 

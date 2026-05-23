@@ -12,14 +12,14 @@ The end deliverable is the same as before: a rendered `.claude/` tailored to the
 
 ## Core principles (read every time before responding)
 
-1. **One topic at a time.** Within a phase, discuss one thing until it's closed. Don't list five sub-questions.
-2. **Take a position first.** Don't ask "what stack?" — ask "looks like Node + TS + React from the `package.json`; backend Express? Or you want NestJS?" The user corrects faster than they originate.
-3. **Prose over markdown.** Default reply shape is 1-3 short paragraphs. Use a table only when comparing 3+ options on multiple axes; use bullets only for actual lists ≥ 3 items. No headers unless the response is genuinely long.
-4. **Two-sentence proposal → one-question close.** Each round: short take, then a question that either accepts or redirects.
-5. **`AskUserQuestion` is rare.** Use it only when you need a discrete pick AND there are ≥ 3 reasonable forks (e.g., the stack catalog). For binary or open questions, just ask in prose.
-6. **Close before advancing.** When a phase has a clear answer, summarize in one sentence and ask "fecha essa fase e vou pra <próxima>?" Wait for a yes (or pushback). Don't slide silently into the next phase.
-7. **Save state after each closed phase.** Resume cleanly if interrupted.
-8. **Match the user's language.** Default pt-BR if ambiguous.
+1. **Lock the language on the first user message.** Detect pt-BR / en / es from the first reply (not from the `/bootstrap-claude` invocation, which is just a slash command). Save it to state as `conversation_language`. Every subsequent reply, every phase synthesis, every prompt — same language. No mixing. If the user later switches mid-conversation, ask once "muda o idioma da conversa pra <X>?" before switching. The rendered artifacts (CLAUDE.md, BASELINE.md, blueprint HTML user-facing strings) also follow this language.
+2. **One topic at a time.** Within a phase, discuss one thing until it's closed. Don't list five sub-questions.
+3. **Take a position first.** Don't ask "qual stack?" — diga "vi Node + TS + React no `package.json`; backend Express, ou prefere NestJS?". O usuário corrige mais rápido do que origina.
+4. **Prose over markdown.** Default reply shape is 1-3 short paragraphs. Use a table only when comparing 3+ options on multiple axes; use bullets only for actual lists ≥ 3 items. No headers unless the response is genuinely long.
+5. **Two-sentence proposal → one-question close.** Each round: short take, then a question that either accepts or redirects.
+6. **`AskUserQuestion` is rare.** Use it only when you need a discrete pick AND there are ≥ 3 reasonable forks (e.g., the stack catalog). For binary or open questions, just ask in prose.
+7. **Close before advancing.** When a phase has a clear answer, summarize in one sentence and ask "fecha essa fase e vou pra <próxima>?" Wait for a yes (or pushback). Don't slide silently into the next phase.
+8. **Save state after each closed phase.** Resume cleanly if interrupted.
 
 ---
 
@@ -31,6 +31,7 @@ The end deliverable is the same as before: a rendered `.claude/` tailored to the
 {
   "status": "in-progress" | "ready-for-blueprint" | "confirmed",
   "started_at": "ISO-8601",
+  "conversation_language": "pt-BR" | "en" | "es",
   "current_phase": "produto" | "stack" | "padroes" | "estilos" | "qualidade" | "blueprint",
   "phases": {
     "produto":   { "closed": false, "summary": "", "data": {} },
@@ -61,7 +62,9 @@ Before saying anything to the user:
    - `.git/config` remote — is there a project name to infer?
    - Top-level folders — monorepo? `apps/`? `packages/`?
 
-Now open the dialogue. Don't summarize what you found yet — just use it to make your first proposal smart.
+Now open the dialogue with a single short opening message **in pt-BR by default** (since the slash command itself doesn't reveal a language). The moment the user replies, detect their actual language and lock it into `conversation_language`. From that point on, every message follows that language.
+
+Don't summarize what you found yet — just use it to make your first proposal smart.
 
 ---
 
@@ -273,6 +276,6 @@ After all writes:
 4. **Save after every closed phase.**
 5. **Use `AskUserQuestion` sparingly.** Prose first. Multi-choice only when the user benefits from a discrete pick across 3+ forks.
 6. **Take positions.** "I recommend X because Y" beats "what would you like?".
-7. **One language throughout.**
+7. **Language is locked.** Whichever language the user replied in first wins. No mixing, ever. The rendered `.claude/` files (BASELINE.md, CLAUDE.md, blueprint HTML) follow the same language for user-facing prose.
 
 $ARGUMENTS
