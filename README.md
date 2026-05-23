@@ -25,31 +25,63 @@ O `claude-setup` reduz isso a uma conversa de dez minutos. A espinha portável �
 
 ## Início rápido
 
+### Setup uma vez por máquina (5 segundos)
+
+Clone o template num cache local — qualquer projeto futuro reusa esse clone:
+
 ```bash
-# 1. Dentro do seu repo novo (zerado)
-npx degit natanrotta/claude-setup/.claude .claude
+git clone git@github.com:natanrotta/claude-setup.git ~/.claude-setup
+```
 
-# 2. Abre o Claude Code
-claude
+Adiciona um alias no seu shell (`~/.zshrc` / `~/.bashrc`):
 
-# 3. Dentro do Claude Code
+```bash
+alias claude-install='bash ~/.claude-setup/scripts/install.sh'
+```
+
+Pronto.
+
+### Em qualquer projeto novo (3 comandos)
+
+```bash
+cd meu-projeto-novo
+claude-install      # copia .claude/ do cache (auto-atualiza via git pull)
+claude              # abre o Claude Code
+```
+
+Dentro do Claude Code:
+
+```
 /bootstrap-claude
 ```
 
 A skill te cumprimenta, escaneia o repo procurando pistas (`package.json`, `Cargo.toml`, etc.) e abre uma conversa. Cinco fases. Por volta de dez minutos. No fim você confirma um blueprint visual em HTML, o bootstrap escreve os arquivos renderizados, e você já tá trabalhando.
 
 <details>
-<summary><b>Outras formas de importar (curl, git submodule)</b></summary>
+<summary><b>Por que não <code>npx degit</code>?</b></summary>
+
+`degit` não autentica em repos privados — ele baixa tarballs anônimos do GitHub. Se o `claude-setup` for público, esses comandos funcionam:
 
 ```bash
-# curl + tar — não precisa de Node
+npx degit natanrotta/claude-setup/.claude .claude
+# ou
 curl -L https://github.com/natanrotta/claude-setup/archive/refs/heads/main.tar.gz \
   | tar -xz --strip-components=2 -C . claude-setup-main/.claude
+```
 
-# git submodule — acompanha o upstream
-git submodule add https://github.com/natanrotta/claude-setup .claude-upstream
+O `install.sh` foi feito pra funcionar nas duas situações (público e privado), porque ele usa `git clone` com a autenticação que você já tem configurada (gh CLI, chaves SSH ou credential helper HTTPS).
+
+</details>
+
+<details>
+<summary><b>Acompanhar updates do template em vários projetos (git submodule)</b></summary>
+
+```bash
+git submodule add git@github.com:natanrotta/claude-setup .claude-upstream
 ln -s .claude-upstream/.claude .claude
 ```
+
+Aí `git submodule update --remote` em cada projeto consumidor puxa as mudanças do template.
 
 </details>
 
