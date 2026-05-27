@@ -78,6 +78,7 @@ If you cannot tie at least 3 baseline rules to your task, you almost certainly m
 ## Spec discipline
 
 **Policy:** `{{SPEC_POLICY}}` (`required` / `recommended` / `optional`).
+**Policy since:** `{{SPEC_POLICY_SINCE}}` — files last touched **before** this date are treated as legacy maintenance and the spec gate is dispensed for them (auditor L1.5 becomes advisory). Empty in greenfield mode.
 **Location:** `{{SPEC_LOCATION}}` (default: `.claude/specs/`).
 **Owner:** `{{SPEC_OWNER}}`.
 
@@ -92,7 +93,21 @@ Specs are the **contract** the implementation honors. Every non-trivial task get
 
 **Lifecycle:** `draft → approved → implementing → shipped`.
 
-**Enforcement:** when `{{SPEC_POLICY}} = required`, the implementing specialist refuses to edit code unless `.claude/specs/<slug>/spec.md` exists with `Status: approved` (or the user explicitly waived with *"sem spec"*). The BABYSIT loop's L0 check restates which spec sections the diff implements, and L1.5 flags any file touched outside `## Scope § In`.
+**Enforcement:** when `{{SPEC_POLICY}} = required` AND any file in the task was last touched at or after `{{SPEC_POLICY_SINCE}}` (or any new file is being created), the implementing specialist refuses to edit code unless `.claude/specs/<slug>/spec.md` exists with `Status: approved` (or the user explicitly waived with *"sem spec"*). The BABYSIT loop's L0 check restates which spec sections the diff implements, and L1.5 flags any file touched outside `## Scope § In`.
+
+**Legacy carve-out:** when ALL files in the task were last touched before `{{SPEC_POLICY_SINCE}}`, the task is legacy maintenance. Spec gate dispensed. The IA still loads `.claude/knowledge/<module>.md` (module discovery file) for that module and respects its `Patterns observed` and `Gotchas`. The change stays scope-tight — manutenção em código velho não vira refactor disfarçado.
+
+---
+
+## Module discovery (lazy, on-touch)
+
+The first time a specialist touches a module, it runs **module discovery**: silently reads the top 5 files in the module by churn, extracts patterns (error handling, validation, naming, test layout, gotchas), writes `.claude/knowledge/<module>.md`, and asks ONE confirmation to the user.
+
+Subsequent tasks on the same module load that file silently — no re-discovery, no re-derivation, no token waste.
+
+The discovery file is the **module's local manual**. When it conflicts with BASELINE on a stylistic decision (e.g., BASELINE says "use Zod" but this module uses class-validator throughout), the discovery file wins for code touched in that module — until the team explicitly migrates.
+
+Discovery is **never** a license to refactor. It only documents what's there. To formally promote a discovered pattern into BASELINE, run `/evolve-claude --promote-pattern <code>`.
 
 ---
 

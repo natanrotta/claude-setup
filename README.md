@@ -4,10 +4,10 @@
 
 # claude-setup
 
-**A conversational bootstrap for Claude Code — Spec-Driven from day one.**
-Drop `.claude/` into an empty repo, talk to it for ten minutes, and you walk away with a fully tuned workspace — task lifecycle, self-audit loop, pattern docs, hooks, specialists, telemetry, and a spec discipline that pins intent to disk before any code lands. All shaped to the project you described.
+**A conversational bootstrap for Claude Code — Spec-Driven from day one. Works on greenfield AND on projects already in flight.**
+Drop `.claude/` into the repo, talk to it for 5–10 minutes, and you walk away with a fully tuned workspace — task lifecycle, self-audit loop, pattern docs, hooks, specialists, telemetry, spec discipline, and lazy on-touch module discovery for any existing code. Nothing is overwritten without backup.
 
-[Why SDD](#why-spec-driven-and-not-vibe-coding) · [Quick start](#quick-start) · [How it works](#how-it-works) · [What you get](#what-you-get) · [The 5-phase conversation](#the-5-phase-conversation) · [Lifecycle](#lifecycle-after-bootstrap) · [Keeping it alive](#keeping-the-setup-alive)
+[Why SDD](#why-spec-driven-and-not-vibe-coding) · [Retrofit in existing projects](#retrofit-mode--existing-projects) · [Quick start](#quick-start) · [How it works](#how-it-works) · [What you get](#what-you-get) · [The 5-phase conversation](#the-5-phase-conversation) · [Lifecycle](#lifecycle-after-bootstrap) · [Keeping it alive](#keeping-the-setup-alive)
 
 </div>
 
@@ -38,6 +38,22 @@ This template ships SDD as defaults, not best practices:
 - **`AGENTS.md`** at the repo root — so Cursor, Codex, Aider, and any other tool that picks up the standard finds the same orientation Claude Code does via `.claude/CLAUDE.md`.
 
 The dev gets the leverage of AI execution without the brittleness of intent-by-chat. The token cost drops because the contract is on disk and short, not re-derived every prompt. And when reality educates the spec mid-implementation, `/refine-spec <slug>` formalizes the change instead of letting it drift.
+
+---
+
+## Retrofit mode — existing projects
+
+The bootstrap auto-detects when it's running inside a project that already has code, commits, hooks, or its own `CLAUDE.md` / `AGENTS.md`. When it does, it switches to **retrofit mode**:
+
+1. **No destructive writes.** Every collision is renamed to `<file>.pre-claude-setup.bak` and logged in `.claude/patterns/RETROFIT-NOTES.md`. You can reconcile any of them by hand later.
+2. **Three short phases instead of five.** Reconhecimento (confirms what was detected) → Política (spec discipline + cutoff date) → Quality gates (specialists + hooks). 5–6 minutes total.
+3. **Spec gate is forward-only.** `spec_policy_since` defaults to today. Anything touched before that date is **legacy** — the spec gate is dispensed for it. PRs already open are exempt automatically.
+4. **No upfront documentation of legacy code.** The bootstrap doesn't ask you to retroactively write specs for the 50k LOC that already exist. That's documentation theater and it rots. Instead:
+5. **Module discovery happens lazily, on-touch.** The first time any specialist touches a module, it reads the top 5 files by churn, extracts patterns (errors, validation, naming, tests, gotchas) into `.claude/knowledge/<module>.md`, asks ONE confirmation, and proceeds. Next time it touches the same module, it reads the file silently — no re-derivation, no token waste.
+6. **Local rules win on style.** If a module uses class-validator and the project BASELINE says Zod, the discovery file pins class-validator as the local rule for that module. The IA respects it. Maintenance on old code stays cirurgica — no inflated refactors, no "while I'm here let me standardize this".
+7. **Hooks integrate, don't conflict.** Husky / lefthook / pre-commit detected? `/finish-task`'s coverage gate gets wired into the existing hook with a single appended line. Original hook content backed up first.
+
+The IA never decides on its own that something is legacy or in scope. Every cutoff, every collision, every module pattern is confirmed once and then cached on disk so future sessions don't re-ask.
 
 ---
 

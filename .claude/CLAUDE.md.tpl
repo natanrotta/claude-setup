@@ -11,15 +11,16 @@ Two execution modes — pick based on whether the user explicitly asked for a wo
 
 ## Project context
 
+- **Bootstrap mode:** `{{REPO_MODE}}` — `greenfield` (5-phase interview) or `retrofit` (3-phase, non-destructive, with module discovery).
 - **Product:** {{PRODUCT_ONELINER}}
 - **Primary persona:** {{PRIMARY_PERSONA}}
 - **Stack summary:** {{STACK_SUMMARY}}
 - **Base branch:** `{{BASE_BRANCH}}`
 - **Specialists configured:** {{SPECIALISTS_LIST}}
-- **Spec discipline:** `{{SPEC_POLICY}}` — `required` / `recommended` / `optional`. Specs live in `{{SPEC_LOCATION}}`. Spec owner: `{{SPEC_OWNER}}`. See § Spec-Driven Development below.
+- **Spec discipline:** `{{SPEC_POLICY}}` since `{{SPEC_POLICY_SINCE}}` — files touched before that date are legacy (spec gate dispensed). Specs live in `{{SPEC_LOCATION}}`. Spec owner: `{{SPEC_OWNER}}`. See § Spec-Driven Development below.
 - **Conversation language:** `{{CONVERSATION_LANGUAGE}}` — every reply, every prompt, every PR description, every commit message in this language. No mixing. If the user clearly switches mid-session, ask once before switching.
 
-For the full stack table, baseline rules, and module layout, see `.claude/patterns/BASELINE.md`.
+For the full stack table, baseline rules, and module layout, see `.claude/patterns/BASELINE.md`. If `repo_mode = retrofit`, also read `.claude/patterns/RETROFIT-NOTES.md` for the list of preserved-but-displaced files (`.pre-claude-setup.bak`) and the module discovery queue.
 
 ---
 
@@ -44,6 +45,25 @@ For the full stack table, baseline rules, and module layout, see `.claude/patter
 - `optional` — IA uses spec when available, doesn't require it.
 
 **Spec lifecycle:** `draft → approved → implementing → shipped`. Any deviation during implementation goes through `/refine-spec <slug>` — silent drift is forbidden.
+
+**Legacy carve-out (`spec_policy_since`):** when `repo_mode = retrofit`, files last touched before `{{SPEC_POLICY_SINCE}}` are considered legacy. Tasks that only modify legacy files **do not** trigger the spec gate, even under `required`. The specialist still loads `.claude/knowledge/<module>.md` (module discovery file) and respects local patterns. Manutenção em código velho fica scope-tight — não vira refactor disfarçado.
+
+---
+
+## Module discovery (on-touch onboarding)
+
+The IA learns the project module by module, not all at once. The first time a specialist touches module `X`:
+
+1. **Silent scan:** read top 5 files in `X/` by churn.
+2. **Extract patterns:** error handling, validation, naming, test layout, gotchas — with `file:line` citations.
+3. **Write** `.claude/knowledge/X.md` from the template at `.claude/knowledge/_template/module-discovery.md.tpl`.
+4. **Ask ONE confirmation** in prose. User can accept (`seguir`) or request one round of edits (`r`).
+
+Subsequent tasks on the same module load `knowledge/X.md` silently — no re-discovery.
+
+**Local rules win on style.** When BASELINE says one thing and the module's discovery file says another (e.g., BASELINE prefers Zod but the module uses class-validator), the local rule wins for code touched in that module. Cross-module rules in BASELINE remain authoritative for new modules and global invariants (tenancy, errors, secrets).
+
+**Discovery is read-only on code.** It captures what's there — never refactors, never suggests "you should standardize." Promotion of a discovered pattern into BASELINE goes through `/evolve-claude --promote-pattern`.
 
 ---
 

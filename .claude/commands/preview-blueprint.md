@@ -57,8 +57,18 @@ Replace every `{{PLACEHOLDER}}` in the template with the matching value from the
 | `{{BOOTSTRAP_DATE}}` | `bootstrap_date` | Footer |
 | `{{BASE_BRANCH}}` | `stages.qualidade.answers.base_branch` | Used in commands |
 | `{{SPEC_POLICY}}` | `phases.qualidade.data.spec_policy` | Spec discipline section |
+| `{{SPEC_POLICY_SINCE}}` | `phases.qualidade.data.spec_policy_since` | Spec discipline section (retrofit cutoff) |
 | `{{SPEC_LOCATION}}` | `phases.qualidade.data.spec_location` | Spec discipline section |
 | `{{SPEC_OWNER}}` | `phases.qualidade.data.spec_owner` | Spec discipline section |
+| `{{REPO_MODE}}` | `repo_mode` | Bootstrap mode section |
+| `{{REPO_MODE_LABEL}}` | derived: "Greenfield" / "Retrofit (projeto em andamento)" | Bootstrap mode section header |
+| `{{SOURCE_FILE_COUNT}}` | `detected.source_file_count` | Bootstrap mode section |
+| `{{MODULE_CANDIDATES_LIST}}` | `detected.module_candidates` | Bootstrap mode + module discovery |
+| `{{COLLISION_PATHS_LIST}}` | `detected.collision_paths` | Bootstrap mode section |
+| `{{HOOK_SYSTEMS_LIST}}` | `detected.hook_systems` | Bootstrap mode section |
+| `{{HOOK_INTEGRATION}}` | `phases.qualidade.data.hook_integration` | Bootstrap mode section |
+| `{{OPEN_PRS_COUNT}}` | `detected.open_prs.length` | Bootstrap mode section |
+| `{{MODULE_DISCOVERY_QUEUE}}` | `detected.module_candidates` (joined) | Module discovery section |
 
 For arrays (lists, tables, cards), iterate and emit one HTML node per item. The template uses simple `{{#each LIST}}...{{/each}}` blocks (mustache-style) — substitute manually since this is markdown-driven, not a runtime template engine.
 

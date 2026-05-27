@@ -180,14 +180,43 @@
 </section>
 
 <section>
+  <h2>Modo do bootstrap</h2>
+  <div class="callout">
+    <h3>{{REPO_MODE_LABEL}}</h3>
+    <ul>
+      <li><strong>Modo:</strong> <code>{{REPO_MODE}}</code> &mdash; greenfield (repo vazio, 5 fases) ou retrofit (projeto em andamento, 3 fases, não-destrutivo).</li>
+      <li><strong>Arquivos de código detectados:</strong> {{SOURCE_FILE_COUNT}}</li>
+      <li><strong>Módulos candidatos:</strong> {{MODULE_CANDIDATES_LIST}}</li>
+      <li><strong>Colisões a serem preservadas:</strong> {{COLLISION_PATHS_LIST}} (todos viram <code>&lt;path&gt;.pre-claude-setup.bak</code>)</li>
+      <li><strong>Hooks nativos detectados:</strong> {{HOOK_SYSTEMS_LIST}} &mdash; integração: <code>{{HOOK_INTEGRATION}}</code></li>
+      <li><strong>PRs abertos:</strong> {{OPEN_PRS_COUNT}} (não bloqueados pelo spec gate)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
   <h2>Spec discipline (SDD)</h2>
   <div class="callout">
-    <h3>Política: {{SPEC_POLICY}}</h3>
+    <h3>Política: {{SPEC_POLICY}} desde {{SPEC_POLICY_SINCE}}</h3>
     <ul>
       <li><strong>Onde:</strong> <code>{{SPEC_LOCATION}}</code> &mdash; specs ficam em <code>.claude/specs/&lt;slug&gt;/spec.md</code>, lidas no Step 0 de todo specialist e linkadas no body do PR.</li>
       <li><strong>Dono:</strong> <code>{{SPEC_OWNER}}</code></li>
-      <li><strong>Quando:</strong> <code>/triage</code> (XS — brief.md) → <code>/spec</code> (S/M — 1 página) → <code>/architect</code> (L — spec completa). <code>/refine-spec &lt;slug&gt;</code> quando a realidade educa o spec.</li>
-      <li><strong>Enforcement:</strong> sob <code>required</code>, o specialist se recusa a editar código sem spec <code>approved</code>. Sob <code>recommended</code>, avisa e pergunta. Sob <code>optional</code>, usa se houver.</li>
+      <li><strong>Carve-out legacy:</strong> arquivos com último commit anterior a <code>{{SPEC_POLICY_SINCE}}</code> não precisam de spec. Manutenção segue padrões locais via <code>knowledge/&lt;module&gt;.md</code>, scope-tight, sem inflar.</li>
+      <li><strong>Quando criar spec:</strong> <code>/triage</code> (XS — brief.md) → <code>/spec</code> (S/M — 1 página) → <code>/architect</code> (L — spec completa). <code>/refine-spec &lt;slug&gt;</code> quando a realidade educa o spec.</li>
+      <li><strong>Enforcement:</strong> sob <code>required</code>, o specialist se recusa a editar código sem spec <code>approved</code> (exceto legacy). Sob <code>recommended</code>, avisa e pergunta. Sob <code>optional</code>, usa se houver.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Module discovery (onboarding on-touch)</h2>
+  <div class="callout">
+    <h3>Como a IA aprende o projeto</h3>
+    <ul>
+      <li><strong>Primeiro contato com um módulo:</strong> o specialist lê os top 5 arquivos por churn, extrai padrões observados (errors, validation, naming, tests, gotchas), escreve <code>.claude/knowledge/&lt;module&gt;.md</code>, e pede UMA confirmação.</li>
+      <li><strong>Próximas tasks no mesmo módulo:</strong> lê silenciosamente o knowledge file. Sem re-derivação, sem re-leitura do módulo inteiro.</li>
+      <li><strong>Conflito local vs. global:</strong> em decisões de estilo, o knowledge do módulo vence sobre BASELINE. Manutenção respeita o que existe; não vira refactor disfarçado.</li>
+      <li><strong>Módulos enfileirados pra discovery:</strong> {{MODULE_DISCOVERY_QUEUE}}</li>
     </ul>
   </div>
 </section>
