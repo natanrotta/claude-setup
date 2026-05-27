@@ -56,6 +56,9 @@ Replace every `{{PLACEHOLDER}}` in the template with the matching value from the
 | `{{NEXT_STEPS}}` | Static — instructions for first task | Markdown rendered |
 | `{{BOOTSTRAP_DATE}}` | `bootstrap_date` | Footer |
 | `{{BASE_BRANCH}}` | `stages.qualidade.answers.base_branch` | Used in commands |
+| `{{SPEC_POLICY}}` | `phases.qualidade.data.spec_policy` | Spec discipline section |
+| `{{SPEC_LOCATION}}` | `phases.qualidade.data.spec_location` | Spec discipline section |
+| `{{SPEC_OWNER}}` | `phases.qualidade.data.spec_owner` | Spec discipline section |
 
 For arrays (lists, tables, cards), iterate and emit one HTML node per item. The template uses simple `{{#each LIST}}...{{/each}}` blocks (mustache-style) — substitute manually since this is markdown-driven, not a runtime template engine.
 

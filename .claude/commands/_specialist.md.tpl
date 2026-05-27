@@ -12,16 +12,21 @@ You implement tasks end-to-end in this layer following the project's patterns do
 
 ---
 
-## Step 0 — Load knowledge
+## Step 0 — Load knowledge + spec
 
 1. Read `.claude/patterns/BASELINE.md` fully.
 2. Read the per-layer pattern doc that applies to this specialist ({{PATTERN_DOC_PATH}}).
 3. Skim `.claude/knowledge/{{SPECIALIST_NAME}}.md` if it exists.
 4. Tail `.claude/learning/violations.md` (last 10 entries) — look for codes recurring in this layer.
+5. **Load the spec.** If `$ARGUMENTS` includes a `spec_path` or task slug, read `.claude/specs/<slug>/spec.md` (or `brief.md` if no `spec.md` exists yet). If neither exists and the change is non-trivial:
+   - Under `spec_policy: required` (set by the bootstrap) → refuse to edit. Reply: *"Sem spec aprovada em `.claude/specs/<slug>/`. Rode `/spec <slug>` ou `/triage` primeiro, ou diga explicitamente 'sem spec' pra prosseguir como trivial fix."*
+   - Under `spec_policy: recommended` → warn once, ask via `AskUserQuestion`: "Tarefa parece M+, mas não há spec. (1) Criar spec via `/spec` (recomendado) (2) Prosseguir sem spec (3) Cancelar". Honor the answer.
+   - Under `spec_policy: optional` → proceed.
 
 **Forced activation** (mandatory after loading):
 
 > **Baseline activated:** R[id], R[id], R[id] — [one-sentence justification per rule]
+> **Spec activated:** `.claude/specs/<slug>/spec.md` (Status: approved) — implementing § {{SECTIONS}} | `none — trivial fix waived by user` | `brief-only — /triage produced brief.md, no full spec`
 > **Knowledge activated:** (1) [entry] (2) [entry] (3) [entry]
 > **Violations radar:** [recent codes that could bite this task]
 
@@ -51,12 +56,24 @@ Common shortcuts to avoid:
 
 After implementation, before handoff:
 
+### Level 0 — Spec citation (mandatory if spec exists)
+
+Before invoking any auditor, restate in one line which section(s) of the spec the diff implements:
+
+> **Spec coverage:** `.claude/specs/<slug>/spec.md` § 2 (Scope) + § 4 (Behavior contract). Out-of-scope additions: none.
+
+If the diff went beyond `## In scope`, you MUST either (a) trim the diff back to scope or (b) update the spec via `/refine-spec <slug>` before the auditor runs. Silent scope creep is forbidden.
+
 ### Level 1 — `code-auditor` (mechanical, ~5s, max 3 iterations)
 
 1. List the files you touched: `git diff --name-only origin/{{BASE_BRANCH}}...HEAD`.
-2. Invoke the `code-auditor` subagent (via `Agent` tool, `subagent_type: code-auditor`, scope = the file list).
+2. Invoke the `code-auditor` subagent (via `Agent` tool, `subagent_type: code-auditor`, scope = the file list, spec = `.claude/specs/<slug>/spec.md` if present).
 3. Critical or High findings → fix in place → re-invoke. Up to 3 iterations.
 4. After 3 red iterations → escalate via `AskUserQuestion`.
+
+### Level 1.5 — Spec-drift check (when a spec exists)
+
+The auditor also walks `## Scope § In` of the spec against the diff's file list. Files modified that are **not** in `## In scope` produce a `S-C1` finding (out-of-spec drift). Resolution: trim the diff or update the spec.
 
 ### Level 2 — `code-reviewer` (semantic, ~30s, max 2 iterations)
 

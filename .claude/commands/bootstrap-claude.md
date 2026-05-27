@@ -38,7 +38,20 @@ The end deliverable is the same as before: a rendered `.claude/` tailored to the
     "stack":     { "closed": false, "summary": "", "data": {} },
     "padroes":   { "closed": false, "summary": "", "data": {} },
     "estilos":   { "closed": false, "summary": "", "data": {} },
-    "qualidade": { "closed": false, "summary": "", "data": {} }
+    "qualidade": {
+      "closed": false,
+      "summary": "",
+      "data": {
+        "specialists": [],
+        "base_branch": "",
+        "coverage_policy": "enforce" | "advisory" | "disable",
+        "pre_commit": "",
+        "ticket_tracker": "",
+        "spec_policy": "required" | "recommended" | "optional",
+        "spec_location": ".claude/specs/" | "docs/specs/" | "external",
+        "spec_owner": "po" | "architect" | "dev"
+      }
+    }
   }
 }
 ```
@@ -187,7 +200,7 @@ Skip Phase 4 entirely if no frontend.
 
 ## Phase 5 — Quality gates
 
-**Goal:** which specialists, base branch, test coverage policy, pre-commit hooks, ticket tracker integration.
+**Goal:** which specialists, base branch, test coverage policy, pre-commit hooks, ticket tracker integration, **and spec discipline**.
 
 **Opening move.** "Pra fechar, decide o pipeline. Pelas suas respostas, recomendo `/backend`, `/frontend`, `/fullstack` ativos. Se tem LLM nas features do MVP, adiciono `/ai-backend`. Bate?"
 
@@ -198,14 +211,28 @@ Skip Phase 4 entirely if no frontend.
 - Test coverage gate (enforce / advisory / disable)
 - Pre-commit hooks (Husky / lefthook / pre-commit / nada)
 - Ticket tracker (Jira / Linear / GitHub Issues / nada)
+- **Spec discipline** — a regra que decide se SDD é obrigatório no projeto
 
-**Sample exchange:**
+**Sample exchange (coverage):**
 
 > "Test coverage como gate bloqueante no `/finish-task`: cada `*.use-case.ts`, `*.entity.ts`, `*.dto.ts`, `*.controller.ts` precisa de `.spec.ts` co-localizado, senão o PR não abre. Recomendo manter pra projeto sério, mas em MVP cedo às vezes pesa. Liga ou só advisory?"
 
+**Sample exchange (spec discipline — sempre fazer):**
+
+> "Última coisa: spec-driven. Tem três níveis:
+> - `required` — todo specialist se recusa a escrever código sem `.claude/specs/<slug>/spec.md` (a spec é o contrato, igual ao que tá ganhando tração na indústria; libera só com `'sem spec'` explícito para trivial fixes).
+> - `recommended` — IA avisa quando spec faltar e pergunta antes de prosseguir.
+> - `optional` — IA só usa spec se você pedir.
+>
+> Recomendo `required` para produto/SaaS e `recommended` para tooling/library. Pra esse projeto sugiro <X>. Bate, ou prefere o outro modo?"
+
+Captura também:
+- **Onde a spec mora**: `.claude/specs/` (padrão, default) | `docs/specs/` | tracker externo (Linear / Notion / Jira) com ponteiro no `.claude/specs/`.
+- **Dono da spec**: PO / Architect / Dev (apenas registro — informa quem o `/refine-spec` notifica).
+
 **Close.**
 
-> "Quality gates: <specialists list + base branch + coverage enforce + Husky + Jira>. Tudo coletado. Posso gerar o blueprint visual pra confirmar?"
+> "Quality gates: <specialists list + base branch + coverage enforce + Husky + Jira + spec policy: required/recommended/optional>. Tudo coletado. Posso gerar o blueprint visual pra confirmar?"
 
 Save state. `status = ready-for-blueprint`, `current_phase = blueprint`.
 
@@ -241,20 +268,23 @@ If **resetar** → confirm explicitly, delete the state, restart Phase 0.
 
 This is the only phase that touches `.claude/` files outside `.bootstrap-state.json` and `.preview/`.
 
-For each `.claude/**/*.tpl`:
+For each `.claude/**/*.tpl` (with one exclusion — see below):
 
 1. Read the template.
 2. Replace placeholders (`{{PROJECT_NAME}}`, `{{STACK_TABLE}}`, `{{BASELINE_RULES_TABLE}}`, etc.) using `.bootstrap-state.json` § `derived`.
 3. Write the rendered file to the same path **without** `.tpl`.
 4. Delete the `.tpl`.
 
+**Exclusion — runtime templates.** Files under `.claude/specs/_template/*.tpl` (and any path matching `.claude/specs/**`) are **runtime templates** consumed by `/spec`, `/architect`, `/triage`, etc. at task time — NOT bootstrap-time templates. The bootstrap MUST preserve them as-is. Skip these in the rendering loop and do NOT delete them.
+
 Specific renderings:
 
-- `patterns/BASELINE.md.tpl` → BASELINE with rules tailored to the stack.
-- `patterns/code-review-checklist.md.tpl` → checklist with codes from the stack catalog (Prisma → B-C1; React+Chakra → F-C2; etc.).
+- `patterns/BASELINE.md.tpl` → BASELINE with rules tailored to the stack + the `Spec discipline` section filled from Phase 5 answers.
+- `patterns/code-review-checklist.md.tpl` → checklist with codes from the stack catalog (Prisma → B-C1; React+Chakra → F-C2; etc.). The universal `S-*` spec-driven codes are kept verbatim.
 - `hooks/post-edit.sh.tpl` → render **once per active layer** (e.g. `post-edit-backend.sh`, `post-edit-frontend.sh`) with layer-specific regexes inlined.
 - `hooks/check-test-coverage.sh.tpl` → render only if Stage 5 enabled coverage; else delete.
-- `CLAUDE.md.tpl` (at repo root) → combine lifecycle + routing rules + project blurb.
+- `CLAUDE.md.tpl` → combine lifecycle + routing rules + project blurb + spec discipline routing.
+- `AGENTS.md.tpl` → render and write to **repo root** as `AGENTS.md` (industry-standard pointer recognized by other AI tools). The `.tpl` source stays in `.claude/` and is deleted after rendering.
 - `settings.json.tpl` → wire rendered hooks + permissions allow-list inferred from package manager.
 - `commands/_specialist.md.tpl` → render one per active specialist not already in the portable spine.
 

@@ -180,17 +180,30 @@
 </section>
 
 <section>
+  <h2>Spec discipline (SDD)</h2>
+  <div class="callout">
+    <h3>Política: {{SPEC_POLICY}}</h3>
+    <ul>
+      <li><strong>Onde:</strong> <code>{{SPEC_LOCATION}}</code> &mdash; specs ficam em <code>.claude/specs/&lt;slug&gt;/spec.md</code>, lidas no Step 0 de todo specialist e linkadas no body do PR.</li>
+      <li><strong>Dono:</strong> <code>{{SPEC_OWNER}}</code></li>
+      <li><strong>Quando:</strong> <code>/triage</code> (XS — brief.md) → <code>/spec</code> (S/M — 1 página) → <code>/architect</code> (L — spec completa). <code>/refine-spec &lt;slug&gt;</code> quando a realidade educa o spec.</li>
+      <li><strong>Enforcement:</strong> sob <code>required</code>, o specialist se recusa a editar código sem spec <code>approved</code>. Sob <code>recommended</code>, avisa e pergunta. Sob <code>optional</code>, usa se houver.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
   <h2>Pipeline de qualidade</h2>
   <div class="pipeline">
-    <div class="pipeline-step"><div class="num">1</div><div class="body"><code>/triage</code> &mdash; Architect + Engineer + Product em paralelo. Produz pre-dev brief.</div></div>
+    <div class="pipeline-step"><div class="num">1</div><div class="body"><strong>Spec gate</strong> &mdash; <code>/triage</code>, <code>/spec</code>, ou <code>/architect</code> escreve <code>.claude/specs/&lt;slug&gt;/spec.md</code>. Bypass só com <code>"sem spec"</code> explícito.</div></div>
     <div class="pipeline-arrow">↓</div>
-    <div class="pipeline-step"><div class="num">2</div><div class="body">Specialist implementa &mdash; <code>/backend</code>, <code>/frontend</code>, <code>/fullstack</code>, etc.</div></div>
+    <div class="pipeline-step"><div class="num">2</div><div class="body">Specialist implementa &mdash; <code>/backend</code>, <code>/frontend</code>, <code>/fullstack</code>, etc. (carrega <code>spec.md</code> no Step 0)</div></div>
     <div class="pipeline-arrow">↓</div>
-    <div class="pipeline-step"><div class="num">3</div><div class="body">BABYSIT loop &mdash; <code>code-auditor</code> (L1 mecânico) → <code>code-reviewer</code> (L2 semântico) → <code>/duck-debug</code> (L3 verbalização, só M/L).</div></div>
+    <div class="pipeline-step"><div class="num">3</div><div class="body">BABYSIT loop &mdash; L0 spec citation → <code>code-auditor</code> (L1 mecânico) → L1.5 spec-drift (<code>S-C1</code>) → <code>code-reviewer</code> (L2 semântico + behavior contract) → <code>/duck-debug</code> (L3 verbalização, só M/L).</div></div>
     <div class="pipeline-arrow">↓</div>
-    <div class="pipeline-step"><div class="num">4</div><div class="body"><code>/finish-task</code> &mdash; cobertura de testes → <code>/code-review</code> independente → <code>/check</code> (3 retries) → <code>/finish</code> abre PR.</div></div>
+    <div class="pipeline-step"><div class="num">4</div><div class="body"><code>/finish-task</code> &mdash; cobertura de testes → <code>/code-review</code> independente → <code>/check</code> (3 retries) → <code>/finish</code> abre PR com link da spec no body.</div></div>
     <div class="pipeline-arrow">↓</div>
-    <div class="pipeline-step"><div class="num">5</div><div class="body">Após merge: <code>/cleanup-task</code> remove worktree + branch local. Telemetria em <code>learning/violations.md</code> evolui o setup via <code>/evolve-claude</code>.</div></div>
+    <div class="pipeline-step"><div class="num">5</div><div class="body">Após merge: <code>/cleanup-task</code> remove worktree + branch, marca spec como <code>shipped</code>. Telemetria em <code>learning/violations.md</code> evolui o setup via <code>/evolve-claude</code>.</div></div>
   </div>
 </section>
 

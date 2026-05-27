@@ -4,10 +4,10 @@
 
 # claude-setup
 
-**A conversational bootstrap for Claude Code.**
-Drop `.claude/` into an empty repo, talk to it for ten minutes, and you walk away with a fully tuned workspace — task lifecycle, self-audit loop, pattern docs, hooks, specialists, telemetry. All shaped to the project you described.
+**A conversational bootstrap for Claude Code — Spec-Driven from day one.**
+Drop `.claude/` into an empty repo, talk to it for ten minutes, and you walk away with a fully tuned workspace — task lifecycle, self-audit loop, pattern docs, hooks, specialists, telemetry, and a spec discipline that pins intent to disk before any code lands. All shaped to the project you described.
 
-[Quick start](#quick-start) · [How it works](#how-it-works) · [What you get](#what-you-get) · [The 5-phase conversation](#the-5-phase-conversation) · [Lifecycle](#lifecycle-after-bootstrap) · [Keeping it alive](#keeping-the-setup-alive)
+[Why SDD](#why-spec-driven-and-not-vibe-coding) · [Quick start](#quick-start) · [How it works](#how-it-works) · [What you get](#what-you-get) · [The 5-phase conversation](#the-5-phase-conversation) · [Lifecycle](#lifecycle-after-bootstrap) · [Keeping it alive](#keeping-the-setup-alive)
 
 </div>
 
@@ -20,6 +20,24 @@ Setting up Claude Code properly takes a week of trial and error. You write your 
 Then you start your next project. Nothing carries over cleanly — regexes target the wrong paths, pattern docs reference modules that don't exist, specialists know the wrong stack. So you copy-paste and edit by hand, and there goes another half-week.
 
 `claude-setup` collapses that into a ten-minute conversation. The portable spine — triage, audit loop, lifecycle commands — copies over untouched. The project-specific parts — anti-pattern codes, hook regexes, BASELINE rules, specialist routing — are filled in by a meta-skill that interviews you about the project and renders the templates.
+
+---
+
+## Why Spec-Driven, and not vibe coding
+
+**Vibe coding** — tossing vague instructions at an AI and accepting whatever it returns — works for throwaway scripts. It collapses in real systems: the AI re-derives context every turn (token waste), the architecture decisions come out random, and there is no contract anywhere that says what the change *was supposed to do*. The intent only ever lives in the chat, and the chat compacts.
+
+**Spec-Driven Development (SDD)** flips that. The specification is the source of truth; the code is the executable derivative. The dev's job moved from writing lines to writing intent — what the system should do, for whom, with which guarantees. The AI executes the spec.
+
+This template ships SDD as defaults, not best practices:
+
+- `.claude/specs/<slug>/spec.md` — every non-trivial task gets a 1-page spec on disk before any edit lands. It survives session compaction. It links into the PR. It is what the auditor checks the diff against.
+- **Three authoring routes**, sized to the task: `/triage` (XS — 3-perspective brief), `/spec` (S/M — 1 page), `/architect` (L — full field-research spec). All three persist to `.claude/specs/`.
+- **The BABYSIT loop is anchored to the spec.** Before the auditor runs, the specialist restates which spec sections it implemented (L0). The auditor flags any file edited outside `## Scope § In` as `S-C1` drift (L1.5). Silent scope creep is forbidden.
+- **`spec_policy: required | recommended | optional`** — chosen during bootstrap. Under `required`, implementing specialists refuse to edit code without an approved spec.
+- **`AGENTS.md`** at the repo root — so Cursor, Codex, Aider, and any other tool that picks up the standard finds the same orientation Claude Code does via `.claude/CLAUDE.md`.
+
+The dev gets the leverage of AI execution without the brittleness of intent-by-chat. The token cost drops because the contract is on disk and short, not re-derived every prompt. And when reality educates the spec mid-implementation, `/refine-spec <slug>` formalizes the change instead of letting it drift.
 
 ---
 
@@ -93,11 +111,12 @@ After bootstrap finishes, your project has a `.claude/` that looks roughly like 
 
 ```
 your-project/
+├── AGENTS.md                           Industry-standard pointer (Cursor / Codex / Aider compatible)
 ├── .claude/
-│   ├── CLAUDE.md                       Lifecycle contract + routing
+│   ├── CLAUDE.md                       Lifecycle contract + spec routing
 │   ├── agents/
-│   │   ├── code-auditor.md             Mechanical L1 reviewer (grep + codes)
-│   │   ├── code-reviewer.md            Semantic L2 reviewer (judgment)
+│   │   ├── code-auditor.md             Mechanical L1 reviewer + L1.5 spec-drift (grep + codes + S-*)
+│   │   ├── code-reviewer.md            Semantic L2 reviewer (judgment + behavior contract)
 │   │   ├── duck-explainer.md           Verbalizes the change in prose
 │   │   ├── duck-challenger.md          Probes the explanation, blind to code
 │   │   ├── triage-architect.md         Architectural perspective
@@ -105,25 +124,34 @@ your-project/
 │   │   └── triage-product.md           User-value + MVP perspective
 │   ├── commands/
 │   │   ├── start-task.md               Worktree + branch creation
-│   │   ├── triage.md                   3-perspective pre-dev gate
+│   │   ├── triage.md                   3-perspective pre-dev gate → brief.md on disk
+│   │   ├── spec.md                     Mid-weight 1-page spec → spec.md on disk
+│   │   ├── architect.md                Heavy spec for L-sized features → spec.md on disk
+│   │   ├── brainstorm.md               Divergent design
 │   │   ├── code-review.md              Wrapper → code-reviewer subagent
 │   │   ├── normalize.md                Read-only audit dispatcher
 │   │   ├── duck-debug.md               Rubber-duck orchestrator
 │   │   ├── check.md                    Type + lint + format + test loop
-│   │   ├── finish-task.md              Coverage → review → check → PR
+│   │   ├── finish-task.md              Coverage → review → check → PR (links spec)
 │   │   ├── finish.md                   PR creation
 │   │   ├── cleanup-task.md             Worktree + branch removal
-│   │   ├── brainstorm.md               Divergent design
-│   │   ├── architect.md                Heavy spec for L-sized features
 │   │   ├── evolve-claude.md            Setup refinement skill
 │   │   └── <specialists>.md            /backend, /frontend, /fullstack, ...
+│   ├── specs/                          Spec artifacts — the SDD contracts
+│   │   ├── README.md                   How specs work in this repo
+│   │   ├── _template/                  Runtime templates for /spec and /architect
+│   │   │   ├── spec.md.tpl
+│   │   │   └── brief.md.tpl
+│   │   └── <slug>/                     One folder per task
+│   │       ├── spec.md                 The contract — status, scope, behavior, edge cases, tests
+│   │       └── brief.md                Optional — when /triage ran but /spec didn't
 │   ├── hooks/
 │   │   ├── post-edit-backend.sh        Layer-specific anti-pattern regexes
 │   │   ├── post-edit-frontend.sh       Layer-specific anti-pattern regexes
 │   │   └── check-test-coverage.sh      Coverage gate (if enabled)
 │   ├── patterns/
-│   │   ├── BASELINE.md                 Non-negotiables (R1–Rn) for your stack
-│   │   └── code-review-checklist.md    Full anti-pattern catalog with codes
+│   │   ├── BASELINE.md                 Non-negotiables (R1–Rn) + spec discipline section
+│   │   └── code-review-checklist.md    Full anti-pattern catalog + universal S-* spec codes
 │   ├── knowledge/                      Grows as agents accumulate wisdom
 │   ├── learning/
 │   │   ├── protocol.md                 Telemetry + knowledge contract
@@ -178,31 +206,36 @@ flowchart TD
     A[User describes the task in plain language] --> B{Worktree?}
     B -->|"create a worktree"| C[/start-task]
     B -->|default| D[Inline mode]
-    C --> E[/triage]
-    E --> F[Architect + Engineer + Product<br/>in parallel]
-    F --> G[Unified pre-dev brief]
-    G --> H[Implementing specialist<br/>/backend, /frontend, etc.]
-    D --> H
+    C --> SG{Spec exists<br/>or task trivial?}
+    D --> SG
+    SG -->|no spec, non-trivial| SPEC[/spec OR /triage OR /architect<br/>persist to .claude/specs/&lt;slug&gt;/]
+    SG -->|yes / waived| H[Implementing specialist<br/>/backend, /frontend, etc.]
+    SPEC --> H
     H --> I[BABYSIT loop]
-    I --> J[L1 code-auditor<br/>mechanical grep]
-    J --> K[L2 code-reviewer<br/>semantic judgment]
-    K --> L{M/L task?}
-    L -->|yes| M[L3 /duck-debug<br/>rubber-duck dialogue]
-    L -->|no| N[Handoff]
-    M --> N
+    I --> L0[L0 spec citation<br/>which sections of spec are implemented]
+    L0 --> J[L1 code-auditor<br/>mechanical grep]
+    J --> J5[L1.5 spec-drift<br/>diff vs scope, S-C1]
+    J5 --> K[L2 code-reviewer<br/>semantic judgment + behavior contract]
+    K --> M{M/L task?}
+    M -->|yes| MM[L3 /duck-debug<br/>rubber-duck dialogue]
+    M -->|no| N[Handoff]
+    MM --> N
     N -->|inline| O[Stop. User decides next.]
     N -->|worktree| P[/finish-task]
-    P --> Q[Coverage gate → /code-review →<br/>/check → /finish → PR]
-    Q --> R[After merge: /cleanup-task]
+    P --> Q[Coverage gate → /code-review →<br/>/check → /finish → PR with spec link]
+    Q --> R[After merge: /cleanup-task<br/>spec status → shipped]
 
-    style F fill:#1e2530,stroke:#6e8cff,color:#e6edf3
+    style SG fill:#1e2530,stroke:#e5484d,color:#e6edf3
+    style SPEC fill:#1e2530,stroke:#6e8cff,color:#e6edf3
+    style L0 fill:#1e2530,stroke:#d4a017,color:#e6edf3
     style J fill:#1e2530,stroke:#d4a017,color:#e6edf3
+    style J5 fill:#1e2530,stroke:#d4a017,color:#e6edf3
     style K fill:#1e2530,stroke:#d4a017,color:#e6edf3
-    style M fill:#1e2530,stroke:#d4a017,color:#e6edf3
+    style MM fill:#1e2530,stroke:#d4a017,color:#e6edf3
     style Q fill:#1e2530,stroke:#34c69b,color:#e6edf3
 ```
 
-**Three levels of self-audit run automatically.** L1 (`code-auditor`) is mechanical — grep the diff for known anti-pattern codes. L2 (`code-reviewer`) is semantic — read the diff like a senior engineer would, catch what regex can't. L3 (`/duck-debug`) is verbalization — force the implementer to explain the change in prose to a duck that's blind to the code; the gap in the explanation is the gap in the design.
+**Five levels of self-audit run automatically.** L0 anchors the diff to the spec — the specialist restates which sections it's implementing. L1 (`code-auditor`) is mechanical — grep the diff for known anti-pattern codes. L1.5 is spec-drift — the auditor flags any file edited outside `## Scope § In` as `S-C1`. L2 (`code-reviewer`) is semantic — read the diff like a senior engineer would, checking BASELINE rules **and** the spec's `## Behavior contract` + `## Edge cases`. L3 (`/duck-debug`) is verbalization — force the implementer to explain the change in prose to a duck that's blind to the code; the gap in the explanation is the gap in the design.
 
 Every Critical/High finding gets logged to `learning/violations.md`. That's the seed for the next phase.
 

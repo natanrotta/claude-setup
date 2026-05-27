@@ -62,12 +62,37 @@ For full architectural context, defer to:
 Every specialist MUST do this at the start of every task:
 
 1. Read this file fully (it is intentionally short).
-2. Output a one-line **Baseline activation** statement listing the rule IDs that apply to the current task.
+2. **Load the spec** from `.claude/specs/<slug>/spec.md` (see § Spec discipline below). Print:
+   > **Spec activated:** `.claude/specs/<slug>/spec.md` (Status: approved) — implementing § {{SECTIONS}}.
+   > or `Spec activated: none — trivial fix waived by user.`
+   > or `Spec activated: brief-only — /triage produced brief.md, no full spec.`
+3. Output a one-line **Baseline activation** statement listing the rule IDs that apply to the current task.
    > **Baseline activated:** R1 ({{R1_SHORT}}), R6 ({{R6_SHORT}}), R10 ({{R10_SHORT}}). Out of scope: R12, R14.
-3. Re-check the activated rules during the in-loop self-audit (see § BABYSIT loop below).
-4. If a rule is genuinely impossible to apply, document the exception in the PR body — never silently violate it.
+4. Re-check the activated rules during the in-loop self-audit (see § BABYSIT loop below).
+5. If a rule is genuinely impossible to apply, document the exception in the PR body — never silently violate it.
 
 If you cannot tie at least 3 baseline rules to your task, you almost certainly missed scope.
+
+---
+
+## Spec discipline
+
+**Policy:** `{{SPEC_POLICY}}` (`required` / `recommended` / `optional`).
+**Location:** `{{SPEC_LOCATION}}` (default: `.claude/specs/`).
+**Owner:** `{{SPEC_OWNER}}`.
+
+Specs are the **contract** the implementation honors. Every non-trivial task gets a spec file on disk BEFORE code lands:
+
+| Tool | Artifact | Size |
+|---|---|---|
+| `/triage` | `.claude/specs/<slug>/brief.md` | XS — single session |
+| `/spec` | `.claude/specs/<slug>/spec.md` | S/M — default |
+| `/architect` | `.claude/specs/<slug>/spec.md` (full) | L — new module / migration / sensitive surface |
+| `/refine-spec <slug>` | updates existing spec | when reality educates the spec |
+
+**Lifecycle:** `draft → approved → implementing → shipped`.
+
+**Enforcement:** when `{{SPEC_POLICY}} = required`, the implementing specialist refuses to edit code unless `.claude/specs/<slug>/spec.md` exists with `Status: approved` (or the user explicitly waived with *"sem spec"*). The BABYSIT loop's L0 check restates which spec sections the diff implements, and L1.5 flags any file touched outside `## Scope § In`.
 
 ---
 
@@ -95,26 +120,33 @@ A new file that fails questions 1–3 is a code smell. Stop and reconsider.
 
 ## BABYSIT loop (during development)
 
-Specialists do not "implement, then hand off and hope". They self-audit in a **3-level** tight loop before handoff.
+Specialists do not "implement, then hand off and hope". They self-audit in a **5-level** tight loop before handoff. The first two (L0 / L1.5) anchor the loop to the spec; the rest enforce code quality.
 
-1. **Activate baseline** at start: cite the applicable rule IDs.
+1. **Activate baseline + spec** at start: cite the applicable rule IDs and the spec path (or document the trivial-fix waiver).
 2. **Implement** the change.
-3. **Level 1 — `code-auditor` (mechanical, ~5s, max 3 iterations).**
+3. **Level 0 — Spec citation (mandatory if a spec exists).**
+   - Restate in one line which section(s) of the spec the diff implements:
+     > **Spec coverage:** `.claude/specs/<slug>/spec.md` § 2 (Scope) + § 4 (Behavior contract). Out-of-scope additions: none.
+   - If the diff went beyond `## In scope`, either trim the diff or run `/refine-spec <slug>` BEFORE the auditor. Silent scope creep is forbidden.
+4. **Level 1 — `code-auditor` (mechanical, ~5s, max 3 iterations).**
    - List the files you touched (`git diff --name-only origin/{{BASE_BRANCH}}...HEAD`).
    - Invoke the `code-auditor` subagent (`Agent` tool, read-only). It greps the diff for known anti-pattern codes.
    - If Critical or High findings exist → fix in place → re-invoke. Up to 3 iterations.
    - After the third red iteration, escalate via `AskUserQuestion`.
-4. **Level 2 — `code-reviewer` (semantic, ~30s, max 2 iterations).**
-   - Only after level 1 is clean.
-   - Invoke the `code-reviewer` subagent (`Agent` tool, read-only).
+5. **Level 1.5 — Spec-drift check (when a spec exists).**
+   - The auditor walks `## Scope § In` of the spec against the diff's file list. Files modified that are **not** in `## In scope` raise an `S-C1` finding (out-of-spec drift).
+   - Resolution: trim the diff OR update the spec via `/refine-spec <slug>` and re-run L1.
+6. **Level 2 — `code-reviewer` (semantic, ~30s, max 2 iterations).**
+   - Only after L1 + L1.5 are clean.
+   - Invoke the `code-reviewer` subagent (`Agent` tool, read-only). The reviewer ALSO consumes the spec — it checks whether the implementation honors the `Behavior contract` and addresses the documented `Edge cases`.
    - If Critical or High findings exist → fix → re-invoke. Up to 2 iterations.
-5. **Level 3 — `/duck-debug` (Rubber Duck Debugging, optional — only for M/L tasks).**
-   - Only after levels 1 and 2 are clean.
+7. **Level 3 — `/duck-debug` (Rubber Duck Debugging, optional — only for M/L tasks).**
+   - Only after levels 0–2 are clean.
    - **Skip** if the diff is trivial. **Run** if any of: ≥4 files; new module / repository / use case; domain modified; schema migration; auth / billing / multi-tenant / sensitive-data surface; cross-layer contract change.
-6. **Handoff** to `/finish-task` only when all activated levels return clean.
-7. **Telemetry** — every Critical/High finding the auditor or reviewer reports — and every gap the challenger confirms — is logged to `.claude/learning/violations.md`. Recurring violations get promoted into BASELINE, hooks, or knowledge entries (via `/evolve-claude`).
+8. **Handoff** to `/finish-task` only when all activated levels return clean.
+9. **Telemetry** — every Critical/High finding the auditor or reviewer reports — and every gap the challenger confirms — is logged to `.claude/learning/violations.md`. Recurring violations get promoted into BASELINE, hooks, or knowledge entries (via `/evolve-claude`).
 
-The three levels are complementary: regex (L1) catches literal violations; senior judgment (L2) catches latent ones; verbalization (L3) catches unspoken assumptions.
+The five levels are complementary: spec anchoring (L0 + L1.5) catches scope drift; regex (L1) catches literal violations; senior judgment (L2) catches latent ones; verbalization (L3) catches unspoken assumptions.
 
 ---
 

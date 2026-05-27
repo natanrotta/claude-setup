@@ -18,6 +18,7 @@
 - `B-*` — Backend
 - `F-*` — Frontend
 - `X-*` — Cross-cutting (env vars, migrations, contracts, secrets, AI)
+- `S-*` — Spec-driven (drift between the diff and the approved spec — universal, not stack-specific)
 - (Project may add new prefixes via `/evolve-claude` — e.g. `M-*` for mobile, `D-*` for data pipeline)
 
 ## Severity letters in code
@@ -56,6 +57,36 @@ If the table above is empty, test coverage is not enforced for this project.
 ## Cross-cutting (X-*)
 
 {{CROSS_CHECKS}}
+
+---
+
+## Spec-driven (S-*)
+
+Universal codes — they don't depend on stack. Active only when a spec file exists for the task at `.claude/specs/<slug>/spec.md`.
+
+### S-C1 — Critical — Out-of-spec drift
+
+**What it catches.** A file in the diff is not listed under the spec's `## Scope § In` (or `§ 6 Files § Modify/Create`).
+**Why it's Critical.** Silent scope creep breaks the SDD contract — the spec is no longer the source of truth, and reviewers / future devs lose the audit trail.
+**How to fix.** Either trim the diff back to the spec's scope, or run `/refine-spec <slug>` to update the spec BEFORE re-running the auditor. Document the decision under § 9 Decisions of the spec.
+**Auditor behavior.** Walk the diff's file list. For each path not present under § 2 In OR § 6 Files, emit one `S-C1` finding citing `path` and the closest matching scope bullet (or "no related scope bullet").
+
+### S-H1 — High — Behavior contract not honored
+
+**What it catches.** The diff doesn't visibly implement one of the imperatives in `## Behavior contract`.
+**Why it's High.** A spec's `Behavior contract` is the executable subset of the spec — every bullet should map to a code change or a test. Missing means either incomplete work or a documentation gap.
+**How to fix.** Add the missing implementation OR move the imperative to a follow-up spec and trim § 4 here.
+
+### S-H2 — High — Edge case unaddressed
+
+**What it catches.** An edge case listed in `## Edge cases that probably bite` has no corresponding test, guard, or comment in the diff.
+**Why it's High.** Edge cases listed in the spec were called out for a reason. Skipping them in code = vibe coding.
+**How to fix.** Add the test/guard, or document under § 9 Decisions why the edge case is no longer a concern.
+
+### S-M1 — Medium — Spec links not updated
+
+**What it catches.** Spec § 10 Links has `PR:` empty or `Status` is still `draft`/`approved` at finish-task time.
+**How to fix.** `/finish-task` updates these automatically; if it failed, do it manually.
 
 ---
 

@@ -140,14 +140,26 @@ Synthesize the three briefs + the answered questions into the canonical handoff.
 
 Cap the whole brief at **80 lines**.
 
+### Step 4.5 — Persist the brief to disk
+
+Before handoff, write the unified brief to disk so it survives session compaction:
+
+1. Derive a `<slug>` (kebab-case from task title, or ticket ID if `$ARGUMENTS` carries one).
+2. Create `.claude/specs/<slug>/` if missing.
+3. Read `.claude/specs/_template/brief.md.tpl` and fill it from the unified brief you just composed.
+4. Write `.claude/specs/<slug>/brief.md`.
+5. State in one line: *"Brief persisted: `.claude/specs/<slug>/brief.md`. Handing off to <specialist>."*
+
+If the user later needs a full spec (M+ task, multiple sessions), they run `/spec <slug>` to promote the brief into a `spec.md`.
+
 ### Step 5 — Hand off to the specialist
 
-Invoke the recommended specialist via the `Skill` tool, passing the **entire pre-dev brief** as `$ARGUMENTS`.
+Invoke the recommended specialist via the `Skill` tool, passing the **entire pre-dev brief plus the `spec_path`** as `$ARGUMENTS`.
 
 ```
 Skill({
   skill: "<specialist name>",
-  args: "<the unified pre-dev brief verbatim>"
+  args: "spec_path=.claude/specs/<slug>/brief.md\n\n<the unified pre-dev brief verbatim>"
 })
 ```
 

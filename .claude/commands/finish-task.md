@@ -115,13 +115,15 @@ This is the most important gate. Tests MUST pass before the PR is opened.
 ## Phase 7 — PR to base branch
 
 1. Mark the fourth task as `in_progress`.
-2. Invoke the existing `/finish` skill using the `Skill` tool. It handles:
+2. **Resolve the spec.** Look for `.claude/specs/<slug>/spec.md` (or `brief.md`) using the branch name's slug, the ticket ID, or a `spec_path=` hint passed from the specialist. If found, capture the path — it goes in the PR body. If not found and BASELINE § Spec discipline = `required`, abort with *"Sem spec em `.claude/specs/`. Rode `/spec <slug>` antes do PR (ou ajuste a policy)."*
+3. Invoke the existing `/finish` skill using the `Skill` tool, passing `spec_path` so it can include the spec link + scope/behavior summary in the PR body. `/finish` handles:
    - Staging and committing changes with a conventional-commit message
    - Pushing to origin
-   - Creating the PR against the configured base branch
+   - Creating the PR against the configured base branch — the body MUST include a `**Spec:** [.claude/specs/<slug>/spec.md](relative-link) (Status: implementing)` line at the top
    - (If the project integrates with a tracker) commenting the PR link on the ticket and transitioning status
-3. Capture the PR URL returned by `/finish`.
-4. Mark the fourth task as `completed`.
+4. After PR opens, **update the spec's status** from `approved`/`implementing` to `implementing` (or `shipped` once `/cleanup-task` runs after merge). Append `PR: <url>` under § 10 Links.
+5. Capture the PR URL returned by `/finish`.
+6. Mark the fourth task as `completed`.
 
 ---
 

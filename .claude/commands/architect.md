@@ -164,20 +164,40 @@ Sections (adapt to the project's actual layers):
 - **5.4 Dependencies** — reuse, create, npm packages
 - **5.5 Execution Plan** — implementation order with skill assignment per step
 
+### Persist the spec to disk
+
+The spec is the **contract** — it MUST land on disk, not just in the chat.
+
+1. Derive a `<slug>` from the feature name (kebab-case) or use the ticket ID if `$ARGUMENTS` carries one.
+2. Create `.claude/specs/<slug>/` if missing.
+3. Read `.claude/specs/_template/spec.md.tpl` and fill it with what Phases 3–5 produced:
+   - `Status: draft` initially (becomes `approved` after Gate 2).
+   - `Source: /architect`, `Size: L`.
+   - Sections § 1–7 mapped from the analysis you just wrote.
+   - Decisions from the batched round logged under § 9 with date + reason.
+4. Write `.claude/specs/<slug>/spec.md`.
+5. State in one line: *"Spec persisted: `.claude/specs/<slug>/spec.md` (Status: draft). Awaiting Gate 2."*
+
 ---
 
 ## Gate 2 — Spec approved
 
 > "This is the complete technical specification. Does it meet your expectations? Anything to adjust, remove, or expand?"
 
-Wait for explicit approval.
+On approval:
+1. Flip the persisted spec's `Status` field from `draft` to `approved`.
+2. Stamp `Updated:` with today's date.
+3. Reply: *"Status: approved. Pode rodar `/triage` ou invocar o specialist passando `spec_path=.claude/specs/<slug>/spec.md`."*
+
+Wait for explicit approval. Never flip `approved` without it.
 
 ---
 
 ## Phase 6 — Iterative refinement
 
-- Changes: update only the affected sections.
+- Changes: update only the affected sections of the persisted spec.
 - New questions: mini batched round (max 3).
+- Every accepted change increments `Updated:` and appends an entry under `§ 9 Decisions`.
 - Repeat until approved.
 
 ---
@@ -200,6 +220,6 @@ Wait for explicit approval.
 
 ## Task Lifecycle (read-only handoff)
 
-This is a **read-only specialist**. After Gate 2, hand off. Do not call `/finish-task`.
+This is a **read-only specialist on code** — it writes ONLY to `.claude/specs/<slug>/spec.md`. After Gate 2, hand off to the implementing specialist (passing `spec_path=.claude/specs/<slug>/spec.md` as part of `$ARGUMENTS`). Do not call `/finish-task` — there is nothing to finalize from the spec side.
 
 $ARGUMENTS

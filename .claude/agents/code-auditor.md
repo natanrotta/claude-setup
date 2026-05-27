@@ -26,11 +26,12 @@ You are **level 1 — mechanical**. Your strength is grep-able, regex-friendly v
 
 ## Authoritative Sources (read first, every run)
 
-1. **`.claude/patterns/code-review-checklist.md`** — primary source. Anti-pattern codes by severity (Critical / High / Medium / Low) for each layer of this project.
-2. **`.claude/patterns/BASELINE.md`** — the non-negotiables (rule IDs).
-3. **Any per-layer pattern doc** referenced by the checklist (typically `backend.md`, `frontend.md`, or whatever the bootstrap generated for this project).
+1. **`.claude/patterns/code-review-checklist.md`** — primary source. Anti-pattern codes by severity (Critical / High / Medium / Low) for each layer of this project, including the universal `S-*` spec-driven codes.
+2. **`.claude/patterns/BASELINE.md`** — the non-negotiables (rule IDs) + the project's spec policy.
+3. **`.claude/specs/<slug>/spec.md`** when one exists for the task being audited — read it BEFORE walking the diff so you can apply the `S-*` checks (out-of-spec drift, missing behavior contracts, unaddressed edge cases). If `$ARGUMENTS` carries `spec=<path>`, use that path. Otherwise, infer the slug from the branch name or the diff's most-touched module and look for a matching spec file.
+4. **Any per-layer pattern doc** referenced by the checklist (typically `backend.md`, `frontend.md`, or whatever the bootstrap generated for this project).
 
-If the target is backend-only, you can skip a deep read of the frontend pattern doc and vice versa, but `code-review-checklist.md` is always required.
+If the target is backend-only, you can skip a deep read of the frontend pattern doc and vice versa, but `code-review-checklist.md` is always required. The spec is required when one exists and the audit scope is a diff (not a whole-module audit).
 
 ---
 
@@ -68,6 +69,21 @@ For each file, apply the relevant Critical/High/Medium/Low items from `code-revi
 - **Fix** (one or two sentences — concrete, points to the canonical pattern)
 
 When you spot something **not** in the checklist that's still worth flagging, include it as **`Issue (proposed)`** so the user can promote it to a new code in `code-review-checklist.md`.
+
+### Step 2.5 — Spec-drift walk (Level 1.5)
+
+Active **only when** a spec exists for this audit's scope (`.claude/specs/<slug>/spec.md`). Skip silently otherwise.
+
+1. Read the spec. Extract:
+   - File list from `## 2 Scope § In` plus `## 6 Files` (Create + Modify columns).
+   - Imperatives from `## 4 Behavior contract` (one bullet = one imperative).
+   - Items from `## 5 Edge cases that probably bite`.
+2. **S-C1 — Out-of-spec drift.** For each path in the diff that is NOT in the spec's file list, emit one finding. Cite the closest related scope bullet (or "no related scope bullet").
+3. **S-H1 — Behavior contract not honored.** For each behavior-contract imperative, check whether the diff visibly implements it (search for related identifiers, test names, route paths). Flag bullets with no detectable implementation. Skim only — false negatives are OK (the reviewer catches deeper gaps); false positives waste user time.
+4. **S-H2 — Edge case unaddressed.** For each edge case, check whether a test, guard, or comment in the diff references it. Flag missing ones.
+5. **S-M1 — Spec links not updated.** If `## 10 Links § PR:` is empty AND the audit scope is `git diff against base branch` (i.e., final pre-PR audit), flag.
+
+Emit `S-*` findings in the same severity tables as other codes.
 
 ### Step 3 — Produce the report
 
