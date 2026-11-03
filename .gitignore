@@ -1,11 +1,18 @@
-# Bootstrap preview output — generated locally, never committed
-.claude/.preview/
+# Claude Code worktrees
+.claude/worktrees/
+
+# Claude Code runtime artifacts (never commit)
+.claude/scheduled_tasks.lock
+.claude/*.lock
 
 # Local settings overrides (developer-specific permissions, env vars)
 .claude/settings.local.json
 
-# Scheduled tasks lock (runtime artifact)
-.claude/scheduled_tasks.lock
+# Claude Code local secrets — any Claude-Code-only credential lives here.
+# NEVER versioned; only the *.example templates + .gitkeep are committed.
+.claude/.secrets/*
+!.claude/.secrets/*.example
+!.claude/.secrets/.gitkeep
 
 # OS / editor
 .DS_Store
@@ -13,8 +20,3 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
-
-# Node (in case someone uses it for local helper scripts)
-node_modules/
-npm-debug.log*
-yarn-error.log*

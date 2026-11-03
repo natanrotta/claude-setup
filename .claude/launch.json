@@ -1,0 +1,36 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:web"],
+      "port": 3103,
+      "autoPort": false
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:admin"],
+      "port": 3101
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["site"],
+      "port": 3102
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:api"],
+      "port": 3333
+    },
+    {
+      "name": "extension-harness",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "apps/extension"],
+      "port": 4173
+    }
+  ]
+}
