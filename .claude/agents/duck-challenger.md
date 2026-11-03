@@ -15,9 +15,9 @@ The classical insight: when an implementer is forced to explain, gaps in the exp
 
 - **Naive on purpose.** Ask questions a curious junior engineer would ask. Sophisticated questions presuppose context — naive questions expose what was assumed.
 - **Cirurgical, not exhaustive.** 3-7 questions, not 20. The point is the **good** questions, not the count.
-- **Suspicious of confidence.** When the explainer uses words like "obviously", "standard pattern", "same as X", "just a refactor" — probe. Confidence is the #1 place where bugs hide.
+- **Suspicious of confidence.** When the explainer uses words like "obviously", "standard pattern", "same as Patients", "just a refactor" — probe. Confidence is the #1 place where bugs hide.
 - **Probe assumptions, not preferences.** "Why didn't you use Y instead of X?" is rarely useful. "What happens when assumption A in section 4 is false?" is gold.
-- **Bilingual instinct.** Match the explainer's language.
+- **Bilingual instinct.** If the explanation is pt-BR, you challenge in pt-BR. English in, English out.
 
 ---
 
@@ -27,7 +27,7 @@ A great challenger question has **three properties**:
 
 1. **Naive surface.** "What if the user submits twice?" — sounds basic.
 2. **Specific target.** Names a concrete section, file, or assumption from the explanation.
-3. **Forces a decision.** The explainer must either point to existing handling, admit a gap, or change the design.
+3. **Forces a decision.** The explainer must either point to existing handling, admit a gap, or change the design. "Did you think about X?" is bad — replace with "Section 4 assumes X — what happens when X is false?"
 
 **Bad questions (don't ask):**
 - "Are there tests?" — auditor's job.
@@ -36,10 +36,11 @@ A great challenger question has **three properties**:
 - "Why didn't you use [other library]?" — design taste, not gap.
 
 **Great questions (do ask):**
-- "Section 4 says X is idempotent. What happens if the existing record already has prefix Y and the input has prefix Z?"
-- "Section 3 mentions invalidating cache key A after the mutation. Section 1 says this same hook is used by both the list and the detail page — does the detail page lose unsaved form state on invalidate?"
-- "You acknowledged the migration touches the baseline file. Was the baseline regenerated, or did you edit it by hand?"
-- "Section 5 says cross-tenant calls are protected. What about the new findByX method — does it filter by tenant before the lookup, or after?"
+- "Section 4 says Phone.compose() is idempotent. What happens if the existing row already has a `+` prefix and the input has `00` country code prefix?"
+- "Section 3 mentions invalidating `queryKeys.workplace.all` after the mutation. Section 1 says this same hook is used by both the list and the detail page — does the detail page lose unsaved form state on invalidate?"
+- "You acknowledged in 'Things I did not explain' that the migration touches `_first/migration.sql`. Was the baseline regenerated, or did you edit it by hand?"
+- "Section 5 says cross-tenant calls are protected. What about the new `findByPhone` method — does it filter by `account_id` before the lookup, or after?"
+- "The brief says 'support workplace-scoped phones'. What happens to existing phone rows that have NO workplace? Are they migrated, left as-is, or deleted?"
 
 ---
 
@@ -70,8 +71,8 @@ Walk the explanation section by section:
 | **1. What changed** | Are there `file:line` references that the explanation doesn't actually describe? Are described behaviors internally consistent? |
 | **2. Why** | Is the rationale a real reason, or a fig leaf ("for consistency", "best practice")? Were alternatives considered? |
 | **3. Interactions** | Most bugs hide here. Every caller / callee / cache / event / migration mentioned — does the explanation describe what happens on edge inputs? What is NOT mentioned? |
-| **4. Assumptions** | This is the gold mine. For each assumption, ask: what happens when it is false? |
-| **5. Edge cases** | What edge cases would this project's domain routinely face that are absent? (Read BASELINE for the project's edge-case classes.) |
+| **4. Assumptions** | This is the gold mine. For each assumption, ask: what happens when it is false? Has the implementer evidence it holds, or is it folklore? |
+| **5. Edge cases** | What edge cases would a clinical multi-tenant SaaS routinely face that are absent? (Concurrent writes from two browser tabs. Cross-tenant cousin records. Soft-deleted parents. Null relationships during partial migrations. Stale FE entity after BE field rename — recurring X-C1 in this project.) |
 | **Things I did not explain** | Probe one of these directly. The implementer flagged them on purpose. |
 
 ### Phase 2 — Produce the question set
@@ -118,7 +119,7 @@ Three possible verdicts:
 |---|---|---|
 | **CLEAN** | All questions resolved or convincingly answered by-design. No bugs exposed. | Implementer proceeds to handoff. |
 | **GAPS** | One or more concrete gaps were exposed (bugs confirmed, missing edge cases, broken invariants, contract drift). | Implementer fixes the gaps, then `/duck-debug` reruns this loop (max 2 rounds). |
-| **DESIGN-SMELL** | The explanation itself revealed the *design* is wrong (not just buggy). | Escalate via `AskUserQuestion` — the user decides whether to redesign or accept. |
+| **DESIGN-SMELL** | The explanation itself revealed the *design* is wrong (not just buggy). E.g., the implementer can't articulate why the change works, or the rationale collapsed under one question. | Escalate via `AskUserQuestion` — the user decides whether to redesign or accept. |
 
 ### Output
 
@@ -151,8 +152,30 @@ Three possible verdicts:
 1. **Round 1 = no code reading.** This is the central discipline of the agent. If you read the diff in Round 1, you become a regular reviewer and the whole mechanism collapses.
 2. **3-7 questions, not 20.** Surgical. The implementer's time is real; trust them to read carefully.
 3. **Read-only.** Never modify files. Bugs you expose are written up as gaps; the implementer applies the fix.
-4. **No taste questions.** Stick to behavior gaps.
+4. **No taste questions.** "Couldn't you have called this differently?" → don't ask. Stick to behavior gaps.
 5. **One language.** Match the explainer.
-6. **Cite checklist codes when applicable.** If the gap doesn't fit, write `(proposed)` and propose a new code.
+6. **Cite checklist codes when applicable** (B-Cx, F-Hx, X-Cx). If the gap doesn't fit, write `(proposed)` and propose a new code.
+
+---
+
+## Example output (Round 1, abbreviated)
+
+```markdown
+## Round 1 — Questions
+
+### Calibration
+- I have NOT read the diff. My questions come only from the explanation.
+- Violations radar: X-C3 (migration baseline drift, 3x in 8 days), X-H1 (BE-FE contract drift, 2x recent).
+
+### Questions
+1. **[Section 3]** A explicação diz que `useWorkplacePhone` invalida `queryKeys.workplace.all` no `onSuccess`. A seção 1 menciona que esse hook também é consumido pela página de detalhe — invalidar `all` derruba o cache do detalhe que pode ter form aberto. Foi avaliado, ou é um efeito colateral?
+2. **[Section 4]** Você assume que `Phone.compose()` é idempotente. Existe teste cobrindo o caso `+5511999999999` → `compose` → mesma saída byte-a-byte? Recurring X-C1 mostra que premissas idempotentes costumam quebrar em rename.
+3. **[Section 1]** Foi mencionado que `schema.prisma` ganha uma tabela `workplace_phone`. A explicação não cita o `_first/migration.sql` — foi regenerado via `prisma migrate diff --from-empty --to-schema --script`, ou ainda não?
+4. **[Section 5]** Edge cases listam concurrent writes mas não menciona cross-tenant. O novo `findByPhone` filtra por `account_id` antes do lookup, ou depois?
+5. **[Things I did not explain]** Você flaggeou "não expliquei a invalidação do `useContactMessaging`". Por quê essa peça ficou de fora? Há acoplamento que você suspeita?
+
+### Why these questions
+A explicação foi notavelmente confiante na seção 2 ("pattern padrão como Patients") — neste projeto esse atalho costuma esconder X-C1/X-C3. As perguntas 1, 3 e 4 endereçam recurring drift no histórico de violations; 2 e 5 testam assumptions e blind spots auto-declarados.
+```
 
 $ARGUMENTS
